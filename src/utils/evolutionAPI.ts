@@ -2,7 +2,8 @@
  * Helper para fazer requisições para Evolution API
  */
 
-import { https, http, IncomingMessage } from 'follow-redirects';
+import { https, http } from 'follow-redirects';
+import { IncomingMessage } from 'http';
 import { EVOLUTION_CONFIG } from '../config/constants';
 
 export interface EvolutionAPIResponse {

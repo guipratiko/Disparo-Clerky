@@ -165,12 +165,14 @@ export class TemplateService {
   }
 
   private static mapRowToTemplate(row: Record<string, any>): Template {
+    // Parse content com fallback para um tipo válido de TemplateContent
+    const parsedContent = parseJsonbField(row.content, { text: '' }) as TemplateContent;
     return {
       id: row.id,
       userId: row.user_id,
       name: row.name,
       type: row.type as TemplateType,
-      content: parseJsonbField(row.content, {}),
+      content: parsedContent,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     };
