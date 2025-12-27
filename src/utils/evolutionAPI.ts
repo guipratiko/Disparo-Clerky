@@ -38,7 +38,7 @@ export const requestEvolutionAPI = async (
       maxRedirects: 20,
     };
 
-    const req = requestModule.request(options, (res) => {
+    const req = requestModule.request(options, (res: any) => {
       const chunks: Buffer[] = [];
 
       res.on('data', (chunk: Buffer) => {

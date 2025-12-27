@@ -61,7 +61,7 @@ export class TemplateService {
 
     const result = await pgPool.query(query, params);
 
-    return result.rows.map((row) => this.mapRowToTemplate(row));
+    return result.rows.map((row: Record<string, any>) => this.mapRowToTemplate(row));
   }
 
   static async update(
@@ -164,7 +164,7 @@ export class TemplateService {
     return { valid: true };
   }
 
-  private static mapRowToTemplate(row: any): Template {
+  private static mapRowToTemplate(row: Record<string, any>): Template {
     return {
       id: row.id,
       userId: row.user_id,

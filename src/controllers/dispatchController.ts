@@ -25,7 +25,7 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
   },
-  fileFilter: (req, file, cb) => {
+  fileFilter: (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
       cb(null, true);
     } else {
@@ -116,7 +116,7 @@ export const createDispatch = async (
           [userId, instanceId, columnId]
         );
         // Garantir que todos os números estejam normalizados
-        result.rows.forEach((c) => {
+        result.rows.forEach((c: Record<string, any>) => {
           const normalized = ensureNormalizedPhone(c.phone);
           if (normalized) {
             processedContacts.push({

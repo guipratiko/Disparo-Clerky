@@ -92,7 +92,7 @@ export class DispatchService {
 
     const result = await pgPool.query(query, params);
 
-    return result.rows.map((row) => this.mapRowToDispatch(row));
+    return result.rows.map((row: Record<string, any>) => this.mapRowToDispatch(row));
   }
 
   static async update(
@@ -262,10 +262,10 @@ export class DispatchService {
 
     const result = await pgPool.query(query);
 
-    return result.rows.map((row) => this.mapRowToDispatch(row));
+    return result.rows.map((row: Record<string, any>) => this.mapRowToDispatch(row));
   }
 
-  private static mapRowToDispatch(row: any): Dispatch {
+  private static mapRowToDispatch(row: Record<string, any>): Dispatch {
     const settings = parseJsonbField<DispatchSettings>(row.settings, {
       speed: 'normal',
       autoDelete: false,

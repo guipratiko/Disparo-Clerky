@@ -5,7 +5,7 @@
 // Configurar timezone
 process.env.TZ = 'America/Sao_Paulo';
 
-import express, { Express } from 'express';
+import express, { Express, Request, Response } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import { connectAllDatabases } from './config/databases';
@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 connectAllDatabases();
 
 // Rota raiz
-app.get('/', (req, res) => {
+app.get('/', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     message: 'Disparo-Clerky API está funcionando',

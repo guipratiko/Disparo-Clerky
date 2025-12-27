@@ -9,7 +9,8 @@ import {
   createNotFoundError,
   handleControllerError,
 } from '../utils/errorHelpers';
-import { TemplateService, TemplateType } from '../services/templateService';
+import { TemplateService } from '../services/templateService';
+import { TemplateType } from '../types/dispatch';
 import { uploadFileToService } from '../utils/mediaService';
 import multer from 'multer';
 

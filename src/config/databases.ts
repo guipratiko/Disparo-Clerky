@@ -18,7 +18,7 @@ export const pgPool = new Pool({
 
 // Event listeners para PostgreSQL (sem log para evitar spam)
 
-pgPool.on('error', (err) => {
+pgPool.on('error', (err: Error) => {
   console.error('❌ Erro inesperado no pool PostgreSQL:', err);
 });
 
