@@ -66,27 +66,64 @@ export const normalizePhoneList = (
 };
 
 /**
- * Formata número para exibição (ex: (62) 99844-8536)
+ * Extrai telefone do JID (WhatsApp ID)
+ * @param jid - JID completo (ex: 556298448536@s.whatsapp.net ou 556298448536@lid)
+ * @returns Número de telefone extraído (ex: 556298448536)
  */
-export const formatPhoneForDisplay = (phone: string): string => {
+export const extractPhoneFromJid = (jid: string): string => {
+  if (!jid) return '';
+  // Formato: 556298448536@s.whatsapp.net ou 556298448536@lid
+  const match = jid.match(/^(\d+)@/);
+  return match ? match[1] : jid;
+};
+
+/**
+ * Formata um número de telefone brasileiro para exibição
+ * Remove DDI 55 e formata no padrão: (XX)9 XXXX-XXXX
+ * @param phone - Número de telefone (pode ter DDI, pode ser JID, ou número limpo)
+ * @returns Número formatado (ex: (62)9 9844-8536)
+ * 
+ * Exemplo: 
+ * - 556298448536@s.whatsapp.net -> (62)9 9844-8536
+ * - 556298448536 -> (62)9 9844-8536
+ * - 6298448536 -> (62)9 9844-8536
+ */
+export const formatBrazilianPhone = (phone: string): string => {
   if (!phone) return '';
   
-  const digitsOnly = removeNonNumeric(phone);
-  
-  if (digitsOnly.length === 13 && digitsOnly.startsWith('55')) {
-    // Formato: 55 + DDD (2) + número (9 ou 8 dígitos)
-    const ddd = digitsOnly.substring(2, 4);
-    const number = digitsOnly.substring(4);
-    
-    if (number.length === 9) {
-      // Celular: (DDD) 9XXXX-XXXX
-      return `(${ddd}) ${number.substring(0, 5)}-${number.substring(5)}`;
-    } else if (number.length === 8) {
-      // Fixo: (DDD) XXXX-XXXX
-      return `(${ddd}) ${number.substring(0, 4)}-${number.substring(4)}`;
-    }
+  // Se for JID, extrair o número primeiro
+  let rawPhone = phone;
+  if (phone.includes('@')) {
+    rawPhone = extractPhoneFromJid(phone);
   }
   
+  // Remover caracteres não numéricos
+  let cleanPhone = rawPhone.replace(/\D/g, '');
+  
+  // Remover DDI 55 (Brasil) se presente
+  if (cleanPhone.startsWith('55') && cleanPhone.length > 10) {
+    cleanPhone = cleanPhone.substring(2);
+  }
+  
+  // Validar se tem pelo menos 10 dígitos (DDD + número)
+  if (cleanPhone.length < 10) {
+    return phone; // Retornar original se não tiver formato válido
+  }
+  
+  // Extrair DDD (2 primeiros dígitos) e número
+  const ddd = cleanPhone.substring(0, 2);
+  let numberOnly = cleanPhone.substring(2);
+  
+  // Formatar no padrão: (XX)9 XXXX-XXXX
+  if (numberOnly.length === 9) {
+    // Número com 9º dígito: 998448536 -> (62)9 9844-8536
+    return `(${ddd})${numberOnly.substring(0, 1)} ${numberOnly.substring(1, 5)}-${numberOnly.substring(5)}`;
+  } else if (numberOnly.length === 8) {
+    // Número sem 9º dígito: adicionar 9 -> (62)9 9844-8536
+    return `(${ddd})9 ${numberOnly.substring(0, 4)}-${numberOnly.substring(4)}`;
+  }
+  
+  // Se não couber no padrão, retornar original
   return phone;
 };
 

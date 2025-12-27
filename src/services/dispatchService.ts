@@ -254,7 +254,10 @@ export class DispatchService {
 
   static async getScheduledDispatches(): Promise<Dispatch[]> {
     const query = `
-      SELECT * FROM dispatches
+      SELECT id, user_id, instance_id, instance_name, template_id, name, status, 
+             settings, schedule, contacts_data, stats, default_name, user_timezone,
+             created_at, updated_at, started_at, completed_at
+      FROM dispatches
       WHERE status IN ('pending', 'paused', 'running')
         AND schedule IS NOT NULL
       ORDER BY created_at ASC

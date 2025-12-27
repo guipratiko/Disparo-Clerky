@@ -2,8 +2,13 @@
  * Utilitário para substituição de variáveis dinâmicas em templates
  */
 
-import { formatPhoneForDisplay } from './numberNormalizer';
-import { ContactData } from '../types/dispatch';
+import { formatBrazilianPhone } from './numberNormalizer';
+
+export interface ContactData {
+  phone: string; // Número normalizado (ex: 5562998448536)
+  name?: string; // Nome do contato
+  formattedPhone?: string; // Número formatado (opcional, será calculado se não fornecido)
+}
 
 const getFirstName = (fullName?: string): string => {
   if (!fullName || !fullName.trim()) {
@@ -28,7 +33,7 @@ export const replaceVariables = (
   text: string,
   contact: ContactData,
   defaultName: string = 'Cliente',
-  typebotVariables?: Record<string, unknown>
+  typebotVariables?: Record<string, any>
 ): string => {
   if (!text || typeof text !== 'string') {
     return text;
@@ -39,7 +44,7 @@ export const replaceVariables = (
   const firstName = getFirstName(contactName);
   const lastName = getLastName(contactName);
   const fullName = contactName;
-  const formattedPhone = contact.formattedPhone || formatPhoneForDisplay(contact.phone);
+  const formattedPhone = contact.formattedPhone || formatBrazilianPhone(contact.phone);
   const originalPhone = contact.phone;
 
   const variables: Record<string, string> = {
@@ -67,25 +72,32 @@ export const replaceVariables = (
   return result;
 };
 
-import { TemplateContent } from '../types/dispatch';
-
+/**
+ * Substitui variáveis em um objeto JSON (para templates de sequência)
+ * @param content - Conteúdo do template (pode ser string ou objeto)
+ * @param contact - Dados do contato
+ * @param defaultName - Nome padrão
+ * @param typebotVariables - Variáveis do Typebot (opcional)
+ * @returns Conteúdo com variáveis substituídas
+ */
 export const replaceVariablesInContent = (
-  content: TemplateContent | string | unknown,
+  content: any,
   contact: ContactData,
-  defaultName: string = 'Cliente'
-): TemplateContent | string | unknown => {
+  defaultName: string = 'Cliente',
+  typebotVariables?: Record<string, any>
+): any => {
   if (typeof content === 'string') {
-    return replaceVariables(content, contact, defaultName);
+    return replaceVariables(content, contact, defaultName, typebotVariables);
   }
 
   if (Array.isArray(content)) {
-    return content.map((item) => replaceVariablesInContent(item, contact, defaultName));
+    return content.map((item) => replaceVariablesInContent(item, contact, defaultName, typebotVariables));
   }
 
   if (content && typeof content === 'object') {
-    const result: Record<string, unknown> = {};
+    const result: any = {};
     for (const [key, value] of Object.entries(content)) {
-      result[key] = replaceVariablesInContent(value, contact, defaultName);
+      result[key] = replaceVariablesInContent(value, contact, defaultName, typebotVariables);
     }
     return result;
   }
