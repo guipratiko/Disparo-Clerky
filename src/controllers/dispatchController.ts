@@ -10,7 +10,7 @@ import {
   handleControllerError,
 } from '../utils/errorHelpers';
 import { DispatchService } from '../services/dispatchService';
-import { DispatchSettings, DispatchSchedule } from '../types/dispatch';
+import { DispatchSettings, DispatchSchedule, DispatchStatus, UpdateDispatchData } from '../types/dispatch';
 import { TemplateService } from '../services/templateService';
 import { validateContacts, filterValidContacts } from '../services/contactValidationService';
 import { parseCSVFile, parseInputText } from '../utils/csvParser';
@@ -25,7 +25,7 @@ const upload = multer({
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB
   },
-  fileFilter: (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  fileFilter: (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
       cb(null, true);
     } else {
@@ -116,7 +116,7 @@ export const createDispatch = async (
           [userId, instanceId, columnId]
         );
         // Garantir que todos os números estejam normalizados
-        result.rows.forEach((c: Record<string, any>) => {
+        result.rows.forEach((c: { phone: string; name?: string; column_id?: string }) => {
           const normalized = ensureNormalizedPhone(c.phone);
           if (normalized) {
             processedContacts.push({
@@ -341,7 +341,7 @@ export const getDispatches = async (
       return next(createValidationError('Usuário não autenticado'));
     }
 
-    const status = req.query.status as any;
+    const status = req.query.status as DispatchStatus | undefined;
 
     const dispatches = await DispatchService.getByUserId(userId, status);
 
@@ -437,7 +437,7 @@ export const updateDispatch = async (
       return next(createValidationError('Não é possível editar um disparo já concluído'));
     }
 
-    const updateData: any = {};
+    const updateData: UpdateDispatchData = {};
     if (name !== undefined) updateData.name = name;
     if (settings !== undefined) updateData.settings = settings;
     if (schedule !== undefined) updateData.schedule = schedule;

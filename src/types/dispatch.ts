@@ -12,12 +12,21 @@ export type TemplateType =
   | 'file'
   | 'sequence';
 
+// Tipo union para conteúdo de template
+export type TemplateContent = 
+  | TextTemplateContent
+  | ImageTemplateContent
+  | VideoTemplateContent
+  | AudioTemplateContent
+  | FileTemplateContent
+  | SequenceTemplateContent;
+
 export interface Template {
   id: string;
   userId: string;
   name: string;
   type: TemplateType;
-  content: any; // JSONB - estrutura varia por tipo
+  content: TemplateContent; // JSONB - estrutura varia por tipo
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,12 +35,12 @@ export interface CreateTemplateData {
   userId: string;
   name: string;
   type: TemplateType;
-  content: any;
+  content: TemplateContent;
 }
 
 export interface UpdateTemplateData {
   name?: string;
-  content?: any;
+  content?: TemplateContent;
 }
 
 // Estruturas de conteúdo por tipo
@@ -59,9 +68,17 @@ export interface FileTemplateContent {
   mimeType?: string;
 }
 
+// Tipos de conteúdo por tipo de step
+export type StepContent = 
+  | TextTemplateContent
+  | ImageTemplateContent
+  | VideoTemplateContent
+  | AudioTemplateContent
+  | FileTemplateContent;
+
 export interface SequenceStep {
   type: 'text' | 'image' | 'image_caption' | 'video' | 'video_caption' | 'audio' | 'file';
-  content: any;
+  content: StepContent;
   delay: number;
   delayUnit: 'seconds' | 'minutes' | 'hours';
 }

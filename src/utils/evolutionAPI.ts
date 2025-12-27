@@ -2,14 +2,19 @@
  * Helper para fazer requisições para Evolution API
  */
 
-import { https, http } from 'follow-redirects';
+import { https, http, IncomingMessage } from 'follow-redirects';
 import { EVOLUTION_CONFIG } from '../config/constants';
+
+export interface EvolutionAPIResponse {
+  statusCode: number;
+  data: unknown; // JSON response pode ser qualquer estrutura
+}
 
 export const requestEvolutionAPI = async (
   method: string,
   path: string,
-  body?: any
-): Promise<{ statusCode: number; data: any }> => {
+  body?: unknown
+): Promise<EvolutionAPIResponse> => {
   const hostname = EVOLUTION_CONFIG.HOST;
   const apiKey = EVOLUTION_CONFIG.API_KEY;
 
@@ -38,7 +43,7 @@ export const requestEvolutionAPI = async (
       maxRedirects: 20,
     };
 
-    const req = requestModule.request(options, (res: any) => {
+    const req = requestModule.request(options, (res: IncomingMessage) => {
       const chunks: Buffer[] = [];
 
       res.on('data', (chunk: Buffer) => {
@@ -49,7 +54,7 @@ export const requestEvolutionAPI = async (
         const raw = Buffer.concat(chunks).toString('utf8');
         const ok = res.statusCode && res.statusCode >= 200 && res.statusCode < 300;
 
-        let parsed: any = raw;
+        let parsed: unknown = raw;
         try {
           parsed = raw ? JSON.parse(raw) : {};
         } catch {

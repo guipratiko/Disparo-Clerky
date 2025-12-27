@@ -32,10 +32,15 @@ const isAllowedDay = (schedule: DispatchSchedule): boolean => {
  * Processar um disparo - enviar mensagens para todos os contatos
  */
 const processDispatch = async (dispatchId: string, userId: string): Promise<void> => {
+  // O dispatchId já foi adicionado ao Set antes de chamar esta função
+  // Mas verificamos novamente por segurança
   if (processingDispatches.has(dispatchId)) {
+    // Verificar se realmente não está sendo processado (pode ter sido adicionado por outra chamada)
+    // Se já está no Set, não processar novamente
     return;
   }
 
+  // Se chegou aqui, adicionar ao Set (fallback caso não tenha sido adicionado antes)
   processingDispatches.add(dispatchId);
 
   try {
@@ -84,24 +89,47 @@ const processDispatch = async (dispatchId: string, userId: string): Promise<void
       return;
     }
 
-    const processedCount = dispatch.stats.sent + dispatch.stats.failed;
-    const startIndex = processedCount;
     const speed = dispatch.settings.speed;
     
-    for (let i = startIndex; i < dispatch.contactsData.length; i++) {
-      const contact = dispatch.contactsData[i];
+    // Processar apenas um contato por vez para evitar duplicação
+    // Buscar stats atualizadas para saber qual contato processar
+    const currentDispatch = await DispatchService.getById(dispatchId, dispatch.userId);
+    if (!currentDispatch || currentDispatch.status !== 'running') {
+      return;
+    }
+
+    const processedCount = currentDispatch.stats.sent + currentDispatch.stats.failed;
+    if (processedCount >= currentDispatch.stats.total) {
+      await DispatchService.update(dispatchId, dispatch.userId, {
+        status: 'completed',
+        completedAt: new Date(),
+      });
+      return;
+    }
+
+    // Processar apenas o próximo contato
+    if (processedCount < dispatch.contactsData.length) {
+      // Verificar novamente as stats ANTES de processar para evitar race condition
+      const latestDispatch = await DispatchService.getById(dispatchId, dispatch.userId);
+      if (!latestDispatch || latestDispatch.status !== 'running') {
+        return;
+      }
       
-      // Verificar se o disparo ainda está em execução
-      const currentDispatch = await DispatchService.getById(dispatchId, dispatch.userId);
-      if (!currentDispatch || currentDispatch.status !== 'running') {
-        break;
+      const latestProcessedCount = latestDispatch.stats.sent + latestDispatch.stats.failed;
+      
+      // Se o contato já foi processado por outra chamada, não processar novamente
+      if (latestProcessedCount > processedCount) {
+        return; // Já foi processado, sair
       }
-
-      const updatedStats = currentDispatch.stats;
-      if (updatedStats.sent + updatedStats.failed >= updatedStats.total) {
-        break;
+      
+      // Se o número de processados mudou, usar o valor atualizado
+      const actualProcessedCount = latestProcessedCount;
+      if (actualProcessedCount >= dispatch.contactsData.length) {
+        return; // Todos já foram processados
       }
-
+      
+      const contact = dispatch.contactsData[actualProcessedCount];
+      
       await processContact(
         dispatchId,
         dispatch.userId,
@@ -114,7 +142,7 @@ const processDispatch = async (dispatchId: string, userId: string): Promise<void
 
       // Delay entre mensagens (exceto a última)
       // Para 'randomized', recalcular delay a cada mensagem para gerar novo valor aleatório
-      if (i < dispatch.contactsData.length - 1) {
+      if (actualProcessedCount + 1 < dispatch.contactsData.length) {
         const delay = calculateDelay(speed);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -223,6 +251,14 @@ export const processScheduledDispatches = async (): Promise<void> => {
         });
         continue;
       }
+
+      // Verificar se já está sendo processado antes de chamar processDispatch
+      if (processingDispatches.has(dispatch.id)) {
+        continue; // Já está sendo processado, pular
+      }
+
+      // Adicionar ao Set ANTES de chamar processDispatch para evitar race condition
+      processingDispatches.add(dispatch.id);
 
       // Processar disparo em background
       processDispatch(dispatch.id, dispatch.userId).catch((error) => {

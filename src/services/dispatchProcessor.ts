@@ -212,10 +212,12 @@ const sendFileMessage = async (
 /**
  * Processar uma etapa de sequência
  */
+import { SequenceStep } from '../types/dispatch';
+
 const processSequenceStep = async (
   instanceName: string,
   remoteJid: string,
-  step: { type: string; content: any },
+  step: SequenceStep,
   contact: ContactData,
   defaultName?: string
 ): Promise<SendResult> => {

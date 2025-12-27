@@ -28,7 +28,7 @@ export const replaceVariables = (
   text: string,
   contact: ContactData,
   defaultName: string = 'Cliente',
-  typebotVariables?: Record<string, any>
+  typebotVariables?: Record<string, unknown>
 ): string => {
   if (!text || typeof text !== 'string') {
     return text;
@@ -67,11 +67,13 @@ export const replaceVariables = (
   return result;
 };
 
+import { TemplateContent } from '../types/dispatch';
+
 export const replaceVariablesInContent = (
-  content: any,
+  content: TemplateContent | string | unknown,
   contact: ContactData,
   defaultName: string = 'Cliente'
-): any => {
+): TemplateContent | string | unknown => {
   if (typeof content === 'string') {
     return replaceVariables(content, contact, defaultName);
   }
@@ -81,7 +83,7 @@ export const replaceVariablesInContent = (
   }
 
   if (content && typeof content === 'object') {
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(content)) {
       result[key] = replaceVariablesInContent(value, contact, defaultName);
     }

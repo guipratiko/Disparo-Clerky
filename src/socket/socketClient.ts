@@ -13,6 +13,14 @@ let hasWarnedAboutConnection = false;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 3;
 
+// Fila de eventos para emitir quando o socket estiver conectado
+interface PendingEvent {
+  event: string;
+  data: unknown;
+}
+
+const pendingEvents: PendingEvent[] = [];
+
 /**
  * Conectar ao servidor Socket.io do backend principal
  * Nota: O Socket.io é opcional - se não conectar, o sistema continua funcionando
@@ -51,14 +59,19 @@ export const connectSocket = (): void => {
       reconnectAttempts = 0; // Resetar contador ao conectar com sucesso
       hasWarnedAboutConnection = false;
       console.log('✅ Conectado ao Socket.io do backend principal');
+      
+      // Emitir eventos pendentes
+      while (pendingEvents.length > 0) {
+        const event = pendingEvents.shift();
+        if (event && socket) {
+          socket.emit(event.event, event.data);
+        }
+      }
     });
 
     socket.on('disconnect', (reason) => {
       isConnected = false;
-      // Não logar desconexões normais (como "transport close")
-      if (reason !== 'transport close' && reason !== 'io client disconnect') {
-        console.log(`❌ Desconectado do Socket.io: ${reason}`);
-      }
+      // Disconnect handling (log removido para reduzir verbosidade)
     });
 
     socket.on('connect_error', (error) => {
@@ -90,15 +103,7 @@ export const connectSocket = (): void => {
  * O backend principal irá re-emitir para o frontend
  */
 export const emitDispatchUpdate = (userId: string, dispatch: Dispatch): void => {
-  if (!socket || !isConnected) {
-    // Tentar conectar apenas uma vez
-    if (!socket) {
-      connectSocket();
-    }
-    return;
-  }
-
-  socket.emit('dispatch-updated', {
+  const eventData = {
     userId,
     dispatch: {
       id: dispatch.id,
@@ -113,7 +118,23 @@ export const emitDispatchUpdate = (userId: string, dispatch: Dispatch): void => 
       completedAt: dispatch.completedAt instanceof Date ? dispatch.completedAt.toISOString() : dispatch.completedAt,
       updatedAt: dispatch.updatedAt instanceof Date ? dispatch.updatedAt.toISOString() : dispatch.updatedAt,
     },
-  });
+  };
+
+  // Tentar conectar se não estiver conectado
+  if (!socket) {
+    connectSocket();
+  }
+
+  // Se estiver conectado, emitir imediatamente
+  if (socket && isConnected) {
+    socket.emit('dispatch-updated', eventData);
+  } else {
+    // Se não estiver conectado, adicionar à fila
+    pendingEvents.push({
+      event: 'dispatch-updated',
+      data: eventData,
+    });
+  }
 };
 
 /**
@@ -124,7 +145,7 @@ export const disconnectSocket = (): void => {
     socket.disconnect();
     socket = null;
     isConnected = false;
-    console.log('✅ Desconectado do Socket.io');
+    // Desconectado do Socket.io (log removido)
   }
 };
 
