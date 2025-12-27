@@ -4,7 +4,7 @@
 
 import { pgPool } from '../config/databases';
 import { parseJsonbField, stringifyJsonb } from '../utils/dbHelpers';
-import { Template, CreateTemplateData, UpdateTemplateData, TemplateType, SequenceTemplateContent } from '../types/dispatch';
+import { Template, CreateTemplateData, UpdateTemplateData, TemplateType, TemplateContent, SequenceTemplateContent } from '../types/dispatch';
 
 export class TemplateService {
   static async create(data: CreateTemplateData): Promise<Template> {
