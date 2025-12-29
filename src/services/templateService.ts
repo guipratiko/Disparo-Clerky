@@ -129,14 +129,6 @@ export class TemplateService {
       return { valid: false, error: 'Sequência deve ter no mínimo 2 etapas' };
     }
 
-    const types = new Set(content.steps.map((step) => step.type));
-    if (types.size < 2) {
-      return {
-        valid: false,
-        error: 'Sequência deve ter pelo menos 2 etapas de tipos distintos',
-      };
-    }
-
     for (let i = 0; i < content.steps.length; i++) {
       const step = content.steps[i];
       if (!step.type || !step.content) {

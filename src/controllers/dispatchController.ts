@@ -228,14 +228,33 @@ export const createDispatch = async (
       userTimezone, // Salvar timezone do usuário
     });
 
+    // Calcular scheduledAt a partir de startDate e startTime
+    let scheduledAt: string | null = null;
+    if (dispatch.schedule?.startDate && dispatch.schedule?.startTime) {
+      try {
+        const dateTime = `${dispatch.schedule.startDate}T${dispatch.schedule.startTime}:00`;
+        scheduledAt = new Date(dateTime).toISOString();
+      } catch {
+        scheduledAt = null;
+      }
+    }
+
     res.status(201).json({
       status: 'success',
       dispatch: {
         id: dispatch.id,
         name: dispatch.name,
         status: dispatch.status,
-        stats: dispatch.stats,
+        instanceId: dispatch.instanceId,
+        templateId: dispatch.templateId,
+        sentCount: dispatch.stats?.sent || 0,
+        totalCount: dispatch.stats?.total || 0,
+        failedCount: dispatch.stats?.failed || 0,
         createdAt: dispatch.createdAt.toISOString(),
+        updatedAt: dispatch.updatedAt.toISOString(),
+        scheduledAt,
+        startedAt: dispatch.startedAt?.toISOString() || null,
+        completedAt: dispatch.completedAt?.toISOString() || null,
       },
     });
   } catch (error: unknown) {
@@ -347,20 +366,34 @@ export const getDispatches = async (
 
     res.status(200).json({
       status: 'success',
-      dispatches: dispatches.map((d) => ({
-        id: d.id,
-        name: d.name,
-        status: d.status,
-        instanceId: d.instanceId,
-        templateId: d.templateId,
-        settings: d.settings,
-        schedule: d.schedule,
-        stats: d.stats,
-        defaultName: d.defaultName,
-        createdAt: d.createdAt.toISOString(),
-        startedAt: d.startedAt?.toISOString() || null,
-        completedAt: d.completedAt?.toISOString() || null,
-      })),
+      dispatches: dispatches.map((d) => {
+        // Calcular scheduledAt a partir de startDate e startTime
+        let scheduledAt: string | null = null;
+        if (d.schedule?.startDate && d.schedule?.startTime) {
+          try {
+            const dateTime = `${d.schedule.startDate}T${d.schedule.startTime}:00`;
+            scheduledAt = new Date(dateTime).toISOString();
+          } catch {
+            scheduledAt = null;
+          }
+        }
+
+        return {
+          id: d.id,
+          name: d.name,
+          status: d.status,
+          instanceId: d.instanceId,
+          templateId: d.templateId,
+          sentCount: d.stats?.sent || 0,
+          totalCount: d.stats?.total || 0,
+          failedCount: d.stats?.failed || 0,
+          createdAt: d.createdAt.toISOString(),
+          updatedAt: d.updatedAt.toISOString(),
+          scheduledAt,
+          startedAt: d.startedAt?.toISOString() || null,
+          completedAt: d.completedAt?.toISOString() || null,
+        };
+      }),
     });
   } catch (error: unknown) {
     return next(handleControllerError(error, 'Erro ao listar disparos'));
@@ -387,6 +420,17 @@ export const getDispatch = async (
       return next(createNotFoundError('Disparo'));
     }
 
+    // Calcular scheduledAt a partir de startDate e startTime
+    let scheduledAt: string | null = null;
+    if (dispatch.schedule?.startDate && dispatch.schedule?.startTime) {
+      try {
+        const dateTime = `${dispatch.schedule.startDate}T${dispatch.schedule.startTime}:00`;
+        scheduledAt = new Date(dateTime).toISOString();
+      } catch {
+        scheduledAt = null;
+      }
+    }
+
     res.status(200).json({
       status: 'success',
       dispatch: {
@@ -395,11 +439,12 @@ export const getDispatch = async (
         status: dispatch.status,
         instanceId: dispatch.instanceId,
         templateId: dispatch.templateId,
-        settings: dispatch.settings,
-        schedule: dispatch.schedule,
-        stats: dispatch.stats,
-        defaultName: dispatch.defaultName,
+        sentCount: dispatch.stats?.sent || 0,
+        totalCount: dispatch.stats?.total || 0,
+        failedCount: dispatch.stats?.failed || 0,
         createdAt: dispatch.createdAt.toISOString(),
+        updatedAt: dispatch.updatedAt.toISOString(),
+        scheduledAt,
         startedAt: dispatch.startedAt?.toISOString() || null,
         completedAt: dispatch.completedAt?.toISOString() || null,
       },
